@@ -27,26 +27,184 @@
 //
 
 #import "ThumbnailPickerViewTests.h"
+#import "ThumbnailPickerView.h"
+
+// helper #defines
+#define THUMB_WIDTH       17    // 16px + 1px spacing
+#define THUMB_TAG_OFFSET 100
+
+
+#pragma mark - Data Source class
+
+@interface DataSource : NSObject <ThumbnailPickerViewDataSource>
+@property (nonatomic, assign) NSUInteger numberOfImages;
+@end
+
+@implementation DataSource
+
+@synthesize numberOfImages = _numberOfImages;
+
+- (NSUInteger)numberOfImagesForThumbnailPickerView:(ThumbnailPickerView *)thumbnailPickerView
+{
+    return self.numberOfImages;
+}
+
+- (UIImage *)thumbnailPickerView:(ThumbnailPickerView *)thumbnailPickerView imageAtIndex:(NSUInteger)index
+{
+    return [UIImage imageWithContentsOfFile:[[NSBundle bundleForClass:[self class]] pathForResource:@"image001" ofType:@"jpg"]];
+}
+
+@end
+
+
+#pragma mark - Tests class
 
 @implementation ThumbnailPickerViewTests
+
+#pragma mark - helpers
+
+- (NSUInteger)visibleThumbnailsCountForThumbnailPickerView:(ThumbnailPickerView *)view
+{
+    NSUInteger visibleThumbnailsCount = 0;
+    SEL selector = @selector(visibleThumbnailsCount);
+    NSMethodSignature *signature = [[ThumbnailPickerView class] instanceMethodSignatureForSelector:selector];
+    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
+    invocation.selector = selector;
+    invocation.target = view;
+    [invocation invoke];
+    
+    [invocation getReturnValue:&visibleThumbnailsCount];
+    
+    return visibleThumbnailsCount;
+}
 
 - (void)setUp
 {
     [super setUp];
-    
-    // Set-up code here.
+    thumbnailPickerView = [[ThumbnailPickerView alloc] init];
 }
 
 - (void)tearDown
 {
-    // Tear-down code here.
-    
     [super tearDown];
 }
 
-- (void)testExample
+
+#pragma mark - tests
+
+- (void)testNoVisibleThumbnailsWithNilDataSource
 {
-    STFail(@"Unit tests are not implemented yet in ThumbnailPickerViewTests");
+    STAssertNil(thumbnailPickerView.dataSource, @"Data source should initially be nil");
+    [thumbnailPickerView reloadData];
+    
+    NSUInteger visibleThumbnailsCount = [self visibleThumbnailsCountForThumbnailPickerView:thumbnailPickerView];
+    STAssertEquals(visibleThumbnailsCount, 0u, @"Should have 0 visible thumbnails with nil data source");
 }
+
+- (void)testLimitVisibleThumbnailsAmountToFitViewWidth
+{
+    thumbnailPickerView.frame = CGRectMake(0, 0, 200, 50);
+    DataSource *dataSource = [[DataSource alloc] init];
+    dataSource.numberOfImages = 50;
+
+    thumbnailPickerView.dataSource = dataSource;
+    [thumbnailPickerView reloadData];
+
+    NSUInteger visibleThumbnailsCount = [self visibleThumbnailsCountForThumbnailPickerView:thumbnailPickerView];
+    STAssertTrue(visibleThumbnailsCount > 0, @"Visible thumbnails count should be greater than zero");
+    
+    UIView *contentView = [thumbnailPickerView performSelector:@selector(contentView)];
+
+    NSUInteger expectedThumbnailsCount;
+    NSArray *subviews = nil;
+    for (int i = 0; i < 10; i++) {
+        thumbnailPickerView.frame = CGRectMake(0, 0, i*150, 50); // 0...1350
+        [thumbnailPickerView reloadData];
+        visibleThumbnailsCount = [self visibleThumbnailsCountForThumbnailPickerView:thumbnailPickerView];
+
+        subviews = contentView.subviews;
+        STAssertEquals(visibleThumbnailsCount, subviews.count, @"Content view's subviews count different from visible thumbnails count");
+
+        // width plus 1, because we divide by thumb width plus spacing, but
+        // the rightmost thumbnail doesn't have a spacing after itself
+        expectedThumbnailsCount = (thumbnailPickerView.frame.size.width+1)/THUMB_WIDTH;
+        expectedThumbnailsCount = MIN(expectedThumbnailsCount, dataSource.numberOfImages);
+        STAssertEquals(visibleThumbnailsCount, expectedThumbnailsCount, @"Incorrect visible thumbnails count");
+    }
+}
+
+- (void)testFirstSubviewContainsFistDataSourceImage
+{
+    thumbnailPickerView.frame = CGRectMake(0, 0, 200, 50);
+    DataSource *dataSource = [[DataSource alloc] init];
+    dataSource.numberOfImages = 50;
+    
+    thumbnailPickerView.dataSource = dataSource;
+    [thumbnailPickerView reloadData];
+    
+    UIView *contentView = [thumbnailPickerView performSelector:@selector(contentView)];
+    
+    NSArray *subviews = nil;
+    CGPoint hitPoint;
+    for (int i = 1; i <= 10; i++) {
+        thumbnailPickerView.frame = CGRectMake(0, 0, i*150, 50); // 0...1350
+        [thumbnailPickerView layoutSubviews];
+        
+        subviews = contentView.subviews;
+        hitPoint = CGPointMake(0, 0);
+        
+        __block UIView *subview = nil;
+        [subviews enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            if ([obj pointInside:[obj convertPoint:hitPoint fromView:contentView] withEvent:nil]) {
+                subview = obj;
+                *stop = YES;
+            }
+        }];
+        
+        STAssertTrue([subview isKindOfClass:[UIImageView class]], @"subview at %d should be a UIImageView (is %@)", i, [subview class]);
+        
+        // Now we can't really check for the image since image loading is asynchronous
+        // instead we're checking subview tag, that should correspond to image index in datasource
+        STAssertEquals(subview.tag-THUMB_TAG_OFFSET, 0, @"subview should present first (index 0) data source image");
+    }
+}
+
+- (void)testLastSubviewContainsLastDataSourceImage
+{
+    thumbnailPickerView.frame = CGRectMake(0, 0, 200, 50);
+    DataSource *dataSource = [[DataSource alloc] init];
+    dataSource.numberOfImages = 50;
+    
+    thumbnailPickerView.dataSource = dataSource;
+    [thumbnailPickerView reloadData];
+    
+    UIView *contentView = [thumbnailPickerView performSelector:@selector(contentView)];
+    
+    NSArray *subviews = nil;
+    CGPoint hitPoint;
+    for (int i = 1; i <= 10; i++) {
+        thumbnailPickerView.frame = CGRectMake(0, 0, i*150, 50); // 0...1350
+        [thumbnailPickerView layoutSubviews];
+
+        subviews = contentView.subviews;
+        hitPoint = CGPointMake(contentView.bounds.size.width-1, 0);
+
+        __block UIView *subview = nil;
+        [subviews enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            if ([obj pointInside:[obj convertPoint:hitPoint fromView:contentView] withEvent:nil]) {
+                subview = obj;
+                *stop = YES;
+            }
+        }];
+        
+        STAssertTrue([subview isKindOfClass:[UIImageView class]], @"subview at %d should be a UIImageView (is %@)", i, [subview class]);
+        
+        // Now we can't really check for the image since image loading is asynchronous
+        // instead we're checking subview tag, that should correspond to image index in datasource
+        NSInteger lastThumbnailIndex = [thumbnailPickerView.dataSource numberOfImagesForThumbnailPickerView:thumbnailPickerView] - 1;
+        STAssertEquals(subview.tag-THUMB_TAG_OFFSET, lastThumbnailIndex, @"subview should present last (index %d) data source image", lastThumbnailIndex);
+    }
+}
+
 
 @end

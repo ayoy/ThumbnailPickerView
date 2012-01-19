@@ -2,7 +2,7 @@ ThumbnailPickerView
 ===================
 
 
-ThumbnailPickerView is a control displaying a set (or technically an array) of thumbnails aligned horizontally. It mimics thumbnails view from iPhoto's toolbar, but it's a subclass of UIControl and it can be freely used as a regular view outside the toolbar.
+ThumbnailPickerView is a control displaying a set (or technically an array) of thumbnails aligned horizontally. It mimics thumbnails view from iPad's Photos.app toolbar, but as a subclass of UIControl it can be freely used as a regular view outside the toolbar.
 
 
 Features
