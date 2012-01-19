@@ -54,6 +54,7 @@
 		37940F0E14C7133E007D5628 /* ThumbnailPickerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 37940F0D14C7133E007D5628 /* ThumbnailPickerView.m */; };
 		37940F1014C7135C007D5628 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37940F0F14C7135C007D5628 /* QuartzCore.framework */; };
 		37CD932914C85986003E445F /* libOCMock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 37CD932814C85986003E445F /* libOCMock.a */; };
+		37CD933F14C881F7003E445F /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37940ED814C71233007D5628 /* CoreGraphics.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -127,6 +128,7 @@
 				3714498314C81DE500F908CB /* Foundation.framework in Frameworks */,
 				371449A614C81F4000F908CB /* QuartzCore.framework in Frameworks */,
 				37CD932914C85986003E445F /* libOCMock.a in Frameworks */,
+				37CD933F14C881F7003E445F /* CoreGraphics.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

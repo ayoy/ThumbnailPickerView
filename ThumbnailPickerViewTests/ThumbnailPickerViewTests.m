@@ -101,6 +101,31 @@
     STAssertEquals(visibleThumbnailsCount, 0u, @"Should have 0 visible thumbnails with nil data source");
 }
 
+- (void)testCenteringThumbnailsInView
+{
+    DataSource *dataSource = [[DataSource alloc] init];
+    dataSource.numberOfImages = 1;
+    thumbnailPickerView.dataSource = dataSource;
+    
+    UIView *contentView;
+    UIView *thumbnailView;
+    for (int i = 1; i <= 10; i++) {
+        for (int j = 1; j <= 10; j++) {
+            thumbnailPickerView.frame = CGRectMake(0, 0, i*150, (11-j)*50);
+            [thumbnailPickerView layoutSubviews];
+            contentView = [thumbnailPickerView performSelector:@selector(contentView)];
+            thumbnailView = [contentView viewWithTag:THUMB_TAG_OFFSET]; // index 0
+
+            STAssertTrue(CGRectEqualToRect(contentView.bounds, thumbnailView.frame), @"Thumbnail should be placed right inside content view");
+
+            // note: normally we should convert thumbnailPicker.view center from its parent
+            // but we don't have to since it doesn't have a parent in this unit test
+            STAssertTrue(CGPointEqualToPoint(contentView.center, thumbnailPickerView.center), @"Content view should be centerd within thumbnail picker view");
+        }
+    }
+}
+
+
 - (void)testLimitVisibleThumbnailsAmountToFitViewWidth
 {
     thumbnailPickerView.frame = CGRectMake(0, 0, 200, 50);
@@ -147,7 +172,7 @@
     NSArray *subviews = nil;
     CGPoint hitPoint;
     for (int i = 1; i <= 10; i++) {
-        thumbnailPickerView.frame = CGRectMake(0, 0, i*150, 50); // 0...1350
+        thumbnailPickerView.frame = CGRectMake(0, 0, i*150, 50);
         [thumbnailPickerView layoutSubviews];
         
         subviews = contentView.subviews;
@@ -183,7 +208,7 @@
     NSArray *subviews = nil;
     CGPoint hitPoint;
     for (int i = 1; i <= 10; i++) {
-        thumbnailPickerView.frame = CGRectMake(0, 0, i*150, 50); // 0...1350
+        thumbnailPickerView.frame = CGRectMake(0, 0, i*150, 50);
         [thumbnailPickerView layoutSubviews];
 
         subviews = contentView.subviews;
