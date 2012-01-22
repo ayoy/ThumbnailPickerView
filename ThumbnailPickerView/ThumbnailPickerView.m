@@ -40,6 +40,7 @@ static const NSUInteger kBigThumbnailTagOffset = 1000;
 - (void)_setup;
 - (void)_updateSelectedIndexForTouch:(UITouch *)touch fineGrained:(BOOL)fineGrained;
 - (void)_updateBigThumbnailPositionVerbose:(BOOL)verbose animated:(BOOL)animated;
+- (void)_memoryWarning:(NSNotification *)notification;
 
 - (void)_prepareImageViewForReuse:(UIImageView *)imageView;
 - (UIImageView *)_dequeueReusableImageView;
@@ -73,6 +74,7 @@ static const NSUInteger kBigThumbnailTagOffset = 1000;
 - (void)_setup
 {
     self.selectedIndex = NSNotFound;
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_memoryWarning:) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
 }
 
 - (id)initWithCoder:(NSCoder *)aDecoder
@@ -91,6 +93,16 @@ static const NSUInteger kBigThumbnailTagOffset = 1000;
         [self _setup];
     }
     return self;
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+}
+
+- (void)_memoryWarning:(NSNotification *)notification
+{
+    [self.reusableThumbnailImageViews removeAllObjects];
 }
 
 - (void)setSelectedIndex:(NSUInteger)selectedIndex animated:(BOOL)animated
