@@ -232,7 +232,9 @@ static const NSUInteger kBigThumbnailTagOffset = 1000;
                 imageView.image = image;
             });
         });
+#if !OS_OBJECT_USE_OBJC
         dispatch_release(imageLoadingQueue);
+#endif
     }
     [self _updateBigThumbnailPositionVerbose:NO animated:NO];
 }
@@ -251,7 +253,9 @@ static const NSUInteger kBigThumbnailTagOffset = 1000;
                 }
             });
         });
+#if !OS_OBJECT_USE_OBJC
         dispatch_release(imageLoadingQueue);
+#endif
     }
 }
 
@@ -312,7 +316,9 @@ static const NSUInteger kBigThumbnailTagOffset = 1000;
                     self.bigThumbnailImageView.image = image;
                 });
             });
+#if !OS_OBJECT_USE_OBJC
             dispatch_release(imageLoadingQueue);
+#endif
         };
 
         if (animated)
